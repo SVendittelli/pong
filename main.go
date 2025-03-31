@@ -3,10 +3,12 @@ package main
 import (
 	"image/color"
 	"log"
+	"math"
 	"math/rand"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
 const (
@@ -24,7 +26,17 @@ const (
 	ballHeight int = 10
 )
 
+type Mode int
+
+const (
+	ModeTitle Mode = iota
+	ModeGame
+	ModeGameOver
+)
+
 type Game struct {
+	mode Mode
+
 	speed    int
 	playerY  int
 	villainY int
@@ -39,17 +51,19 @@ type Game struct {
 }
 
 func (g *Game) Init() {
+	g.mode = ModeTitle
+
 	g.speed = 2
 	g.playerY = (screenHeight - paddleHeight) / 2
 	g.villainY = (screenHeight - paddleHeight) / 2
 
-	g.villainDir = 1
+	g.villainDir = 0
 	g.villainCoolDown = 0
 
 	g.ballX = screenWidth / 2
 	g.ballY = screenHeight / 2
-	g.ballVelX = -1
-	g.ballVelY = 0
+	g.ballVelX = rand.Intn(2)*2 - 1 // Random direction between -1 and 1
+	g.ballVelY = rand.Intn(2)*2 - 1 // Random direction between -1 and 1
 }
 
 func NewGame() ebiten.Game {
@@ -67,6 +81,25 @@ func (g *Game) isDownPressed() bool {
 }
 
 func (g *Game) Update() error {
+	if g.mode == ModeTitle {
+		if inpututil.IsKeyJustPressed(ebiten.KeyEnter) || inpututil.IsKeyJustPressed(ebiten.KeySpace) {
+			g.mode = ModeGame
+		}
+		return nil
+	}
+
+	if g.mode == ModeGameOver {
+		if inpututil.IsKeyJustPressed(ebiten.KeyEnter) || inpututil.IsKeyJustPressed(ebiten.KeySpace) {
+			g.Init()
+		}
+		return nil
+	}
+
+	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
+		g.Init()
+		return nil
+	}
+
 	if g.isUpPressed() {
 		g.playerY -= g.speed
 	} else if g.isDownPressed() {
@@ -91,6 +124,23 @@ func (g *Game) Update() error {
 
 	g.ballX = Clamp(g.ballX, ballWidth/2, screenWidth-ballWidth/2)
 	g.ballY = Clamp(g.ballY, ballWidth/2, screenHeight-ballWidth/2)
+
+	// Check for vertical collision with the walls
+	if g.ballY == ballHeight/2 || g.ballY == screenHeight-ballHeight/2 {
+		g.ballVelY *= -1
+	}
+
+	// Check for horizontal collision with the paddles
+	if math.Abs(float64(g.ballX-ballWidth/2-(offsetHorizonal+paddleWidth))) <= 1 && g.ballY+ballHeight/2 >= g.playerY && g.ballY-ballHeight/2 <= g.playerY+paddleHeight {
+		g.ballVelX *= -1
+	} else if math.Abs(float64(g.ballX+ballWidth/2-(screenWidth-offsetHorizonal-paddleWidth))) <= 1 && g.ballY+ballHeight/2 >= g.villainY && g.ballY-ballHeight/2 <= g.villainY+paddleHeight {
+		g.ballVelX *= -1
+	}
+
+	// Check for game over condition
+	if g.ballX <= ballWidth/2 || g.ballX >= screenWidth-ballWidth/2 {
+		g.mode = ModeGameOver
+	}
 
 	return nil
 }
