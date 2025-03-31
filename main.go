@@ -18,6 +18,10 @@ const (
 
 	offsetHorizonal int = 20
 	offsetVertical  int = 20
+
+	// Ball size
+	ballWidth  int = 10
+	ballHeight int = 10
 )
 
 type Game struct {
@@ -27,6 +31,11 @@ type Game struct {
 
 	villainDir      int
 	villainCoolDown int
+
+	ballX    int
+	ballY    int
+	ballVelX int
+	ballVelY int
 }
 
 func (g *Game) Init() {
@@ -36,6 +45,11 @@ func (g *Game) Init() {
 
 	g.villainDir = 1
 	g.villainCoolDown = 0
+
+	g.ballX = screenWidth / 2
+	g.ballY = screenHeight / 2
+	g.ballVelX = -1
+	g.ballVelY = 0
 }
 
 func NewGame() ebiten.Game {
@@ -71,6 +85,13 @@ func (g *Game) Update() error {
 	g.playerY = Clamp(g.playerY, offsetVertical, screenHeight-paddleHeight-offsetVertical)
 	g.villainY = Clamp(g.villainY, offsetVertical, screenHeight-paddleHeight-offsetVertical)
 
+	// Update the ball position
+	g.ballX += g.ballVelX
+	g.ballY += g.ballVelY
+
+	g.ballX = Clamp(g.ballX, ballWidth/2, screenWidth-ballWidth/2)
+	g.ballY = Clamp(g.ballY, ballWidth/2, screenHeight-ballWidth/2)
+
 	return nil
 }
 
@@ -91,6 +112,14 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// Draw the villain's paddle
 	op.GeoM.Reset()
 	op.GeoM.Translate(float64(offsetHorizonal+(screenWidth-((2*offsetHorizonal)+paddleWidth))), float64(g.villainY))
+	screen.DrawImage(i, op)
+
+	// Draw the ball
+	i = ebiten.NewImage(ballWidth, ballHeight)
+	i.Fill(color.White)
+	op = &ebiten.DrawImageOptions{}
+
+	op.GeoM.Translate(float64(g.ballX-ballWidth/2), float64(g.ballY-ballHeight/2))
 	screen.DrawImage(i, op)
 }
 
