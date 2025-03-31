@@ -20,13 +20,13 @@ const (
 )
 
 type Game struct {
-	counter int
-	diff    int
+	playerY int
+	speed   int
 }
 
 func (g *Game) Init() {
-	g.counter = 20
-	g.diff = 2
+	g.playerY = 20
+	g.speed = 2
 }
 
 func NewGame() ebiten.Game {
@@ -35,14 +35,25 @@ func NewGame() ebiten.Game {
 	return g
 }
 
+func (g *Game) isUpPressed() bool {
+	return ebiten.IsKeyPressed(ebiten.KeyUp) || ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyK)
+}
+
+func (g *Game) isDownPressed() bool {
+	return ebiten.IsKeyPressed(ebiten.KeyDown) || ebiten.IsKeyPressed(ebiten.KeyS) || ebiten.IsKeyPressed(ebiten.KeyJ)
+}
+
 func (g *Game) Update() error {
-	g.counter += g.diff
-	if g.counter < offsetVertical {
-		g.counter = offsetVertical
-		g.diff *= -1
-	} else if g.counter > screenHeight-paddleHeight-offsetVertical {
-		g.counter = screenHeight - paddleHeight - offsetVertical
-		g.diff *= -1
+	if g.isUpPressed() {
+		g.playerY -= g.speed
+	} else if g.isDownPressed() {
+		g.playerY += g.speed
+	}
+	// Clamp the vertical location of the paddle within the bounds of the screen
+	if g.playerY < offsetVertical {
+		g.playerY = offsetVertical
+	} else if g.playerY > screenHeight-paddleHeight-offsetVertical {
+		g.playerY = screenHeight - paddleHeight - offsetVertical
 	}
 
 	return nil
@@ -59,7 +70,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	for idx := range []string{"player", "villain"} {
 		op.GeoM.Reset()
-		op.GeoM.Translate(float64(offsetHorizonal+(screenWidth-((2*offsetHorizonal)+paddleWidth))*idx), float64(g.counter))
+		op.GeoM.Translate(float64(offsetHorizonal+(screenWidth-((2*offsetHorizonal)+paddleWidth))*idx), float64(g.playerY))
 		screen.DrawImage(i, op)
 	}
 }
