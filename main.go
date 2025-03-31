@@ -1,30 +1,53 @@
 package main
 
 import (
+	"image/color"
 	"log"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
+const (
+	screenWidth  int = 640
+	screenHeight int = 480
+)
+
 type Game struct{}
+
+func NewGame() ebiten.Game {
+	g := &Game{}
+	return g
+}
 
 func (g *Game) Update() error {
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	ebitenutil.DebugPrint(screen, "Hello, World!")
+	screen.Fill(color.RGBA{0x82, 0xa3, 0xff, 0xff})
+
+	ebitenutil.DebugPrint(screen, "PONG")
+
+	i := ebiten.NewImage(10, 30)
+	i.Fill(color.White)
+
+	for idx := range []string{"player", "villain"} {
+		op := &ebiten.DrawImageOptions{}
+		op.GeoM.Reset()
+		op.GeoM.Translate(float64(10+screenWidth*idx-30*idx), 20)
+		screen.DrawImage(i, op)
+	}
 }
 
-func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return 320, 240
+func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
+	return screenWidth, screenHeight
 }
 
 func main() {
-	ebiten.SetWindowSize(640, 480)
-	ebiten.SetWindowTitle("Hello, World!")
-	if err := ebiten.RunGame(&Game{}); err != nil {
+	ebiten.SetWindowSize(screenWidth, screenHeight)
+	ebiten.SetWindowTitle("Pong")
+	if err := ebiten.RunGame(NewGame()); err != nil {
 		log.Fatal(err)
 	}
 }
