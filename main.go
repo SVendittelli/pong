@@ -15,7 +15,7 @@ const (
 	paddleWidth  int = 10
 	paddleHeight int = 40
 
-	offsetHorizonal int = 10
+	offsetHorizonal int = 20
 	offsetVertical  int = 20
 )
 
@@ -59,7 +59,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	for idx := range []string{"player", "villain"} {
 		op.GeoM.Reset()
-		op.GeoM.Translate(float64(offsetHorizonal+(screenWidth-offsetHorizonal-paddleWidth)*idx), float64(g.counter))
+		op.GeoM.Translate(float64(offsetHorizonal+(screenWidth-((2*offsetHorizonal)+paddleWidth))*idx), float64(g.counter))
 		screen.DrawImage(i, op)
 	}
 }
