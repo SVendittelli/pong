@@ -3,6 +3,7 @@ package main
 import (
 	"image/color"
 	"log"
+	"math/rand"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -23,12 +24,18 @@ type Game struct {
 	speed    int
 	playerY  int
 	villainY int
+
+	villainDir      int
+	villainCoolDown int
 }
 
 func (g *Game) Init() {
 	g.speed = 2
 	g.playerY = (screenHeight - paddleHeight) / 2
 	g.villainY = (screenHeight - paddleHeight) / 2
+
+	g.villainDir = 1
+	g.villainCoolDown = 0
 }
 
 func NewGame() ebiten.Game {
@@ -51,6 +58,15 @@ func (g *Game) Update() error {
 	} else if g.isDownPressed() {
 		g.playerY += g.speed
 	}
+
+	if g.villainCoolDown > 0 {
+		g.villainY += g.speed * g.villainDir
+		g.villainCoolDown--
+	} else {
+		g.villainDir = (1 - 2*rand.Intn(2))
+		g.villainCoolDown = rand.Intn(30) + 10 // Random cooldown between 10 and 40 frames
+	}
+
 	// Clamp the vertical location of the paddle within the bounds of the screen
 	g.playerY = Clamp(g.playerY, offsetVertical, screenHeight-paddleHeight-offsetVertical)
 	g.villainY = Clamp(g.villainY, offsetVertical, screenHeight-paddleHeight-offsetVertical)
