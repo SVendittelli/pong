@@ -19,7 +19,7 @@ const (
 	paddleHeight int = 40
 
 	offsetHorizonal int = 20
-	offsetVertical  int = 20
+	offsetVertical  int = 0
 
 	// Ball size
 	ballWidth  int = 10
@@ -37,33 +37,35 @@ const (
 type Game struct {
 	mode Mode
 
-	speed    int
-	playerY  int
-	villainY int
+	paddleSpeed int
+	playerY     int
+	villainY    int
 
 	villainDir      int
 	villainCoolDown int
 
-	ballX    int
-	ballY    int
-	ballVelX int
-	ballVelY int
+	ballX        int
+	ballY        int
+	ballVelX     float64
+	ballVelY     float64
+	ballMaxSpeed float64
 }
 
 func (g *Game) Init() {
 	g.mode = ModeTitle
 
-	g.speed = 2
+	g.paddleSpeed = 3
 	g.playerY = (screenHeight - paddleHeight) / 2
 	g.villainY = (screenHeight - paddleHeight) / 2
 
 	g.villainDir = 0
 	g.villainCoolDown = 0
 
+	g.ballMaxSpeed = 4
 	g.ballX = screenWidth / 2
 	g.ballY = screenHeight / 2
-	g.ballVelX = rand.Intn(2)*2 - 1 // Random direction between -1 and 1
-	g.ballVelY = rand.Intn(2)*2 - 1 // Random direction between -1 and 1
+	g.ballVelX = float64(rand.Intn(2)*2-1) * ((g.ballMaxSpeed-1)*rand.Float64() + 1)
+	g.ballVelY = g.ballMaxSpeed * (rand.Float64()*2 - 1)
 }
 
 func NewGame() ebiten.Game {
@@ -101,13 +103,13 @@ func (g *Game) Update() error {
 	}
 
 	if g.isUpPressed() {
-		g.playerY -= g.speed
+		g.playerY -= g.paddleSpeed
 	} else if g.isDownPressed() {
-		g.playerY += g.speed
+		g.playerY += g.paddleSpeed
 	}
 
 	if g.villainCoolDown > 0 {
-		g.villainY += g.speed * g.villainDir
+		g.villainY += g.paddleSpeed * g.villainDir
 		g.villainCoolDown--
 	} else {
 		g.villainDir = (1 - 2*rand.Intn(2))
@@ -119,8 +121,8 @@ func (g *Game) Update() error {
 	g.villainY = Clamp(g.villainY, offsetVertical, screenHeight-paddleHeight-offsetVertical)
 
 	// Update the ball position
-	g.ballX += g.ballVelX
-	g.ballY += g.ballVelY
+	g.ballX += int(g.ballVelX)
+	g.ballY += int(g.ballVelY)
 
 	g.ballX = Clamp(g.ballX, ballWidth/2, screenWidth-ballWidth/2)
 	g.ballY = Clamp(g.ballY, ballWidth/2, screenHeight-ballWidth/2)
