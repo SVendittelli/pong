@@ -28,7 +28,7 @@ type Game struct {
 func (g *Game) Init() {
 	g.speed = 2
 	g.playerY = (screenHeight - paddleHeight) / 2
-	g.villainY = 20
+	g.villainY = (screenHeight - paddleHeight) / 2
 }
 
 func NewGame() ebiten.Game {
@@ -52,11 +52,8 @@ func (g *Game) Update() error {
 		g.playerY += g.speed
 	}
 	// Clamp the vertical location of the paddle within the bounds of the screen
-	if g.playerY < offsetVertical {
-		g.playerY = offsetVertical
-	} else if g.playerY > screenHeight-paddleHeight-offsetVertical {
-		g.playerY = screenHeight - paddleHeight - offsetVertical
-	}
+	g.playerY = Clamp(g.playerY, offsetVertical, screenHeight-paddleHeight-offsetVertical)
+	g.villainY = Clamp(g.villainY, offsetVertical, screenHeight-paddleHeight-offsetVertical)
 
 	return nil
 }
@@ -70,11 +67,15 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	i.Fill(color.White)
 	op := &ebiten.DrawImageOptions{}
 
-	for idx := range []string{"player", "villain"} {
-		op.GeoM.Reset()
-		op.GeoM.Translate(float64(offsetHorizonal+(screenWidth-((2*offsetHorizonal)+paddleWidth))*idx), float64(g.playerY))
-		screen.DrawImage(i, op)
-	}
+	// Draw the player's paddle
+	op.GeoM.Reset()
+	op.GeoM.Translate(float64(offsetHorizonal), float64(g.playerY))
+	screen.DrawImage(i, op)
+
+	// Draw the villain's paddle
+	op.GeoM.Reset()
+	op.GeoM.Translate(float64(offsetHorizonal+(screenWidth-((2*offsetHorizonal)+paddleWidth))), float64(g.villainY))
+	screen.DrawImage(i, op)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
