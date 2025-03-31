@@ -20,13 +20,15 @@ const (
 )
 
 type Game struct {
-	playerY int
-	speed   int
+	speed    int
+	playerY  int
+	villainY int
 }
 
 func (g *Game) Init() {
-	g.playerY = 20
 	g.speed = 2
+	g.playerY = (screenHeight - paddleHeight) / 2
+	g.villainY = 20
 }
 
 func NewGame() ebiten.Game {
