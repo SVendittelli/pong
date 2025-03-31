@@ -11,31 +11,55 @@ import (
 const (
 	screenWidth  int = 640
 	screenHeight int = 480
+
+	paddleWidth  int = 10
+	paddleHeight int = 40
+
+	offsetHorizonal int = 10
+	offsetVertical  int = 20
 )
 
-type Game struct{}
+type Game struct {
+	counter int
+	diff    int
+}
+
+func (g *Game) Init() {
+	g.counter = 20
+	g.diff = 2
+}
 
 func NewGame() ebiten.Game {
 	g := &Game{}
+	g.Init()
 	return g
 }
 
 func (g *Game) Update() error {
+	g.counter += g.diff
+	if g.counter < offsetVertical {
+		g.counter = offsetVertical
+		g.diff *= -1
+	} else if g.counter > screenHeight-paddleHeight-offsetVertical {
+		g.counter = screenHeight - paddleHeight - offsetVertical
+		g.diff *= -1
+	}
+
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	screen.Fill(color.RGBA{0x82, 0xa3, 0xff, 0xff})
+	screen.Fill(color.Black)
 
 	ebitenutil.DebugPrint(screen, "PONG")
 
-	i := ebiten.NewImage(10, 30)
+	i := ebiten.NewImage(paddleWidth, paddleHeight)
 	i.Fill(color.White)
+	op := &ebiten.DrawImageOptions{}
 
 	for idx := range []string{"player", "villain"} {
-		op := &ebiten.DrawImageOptions{}
 		op.GeoM.Reset()
-		op.GeoM.Translate(float64(10+screenWidth*idx-30*idx), 20)
+		op.GeoM.Translate(float64(offsetHorizonal+(screenWidth-offsetHorizonal-paddleWidth)*idx), float64(g.counter))
 		screen.DrawImage(i, op)
 	}
 }
