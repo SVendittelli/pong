@@ -10,8 +10,10 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/audio"
 	"github.com/hajimehoshi/ebiten/v2/audio/wav"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/examples/resources/fonts"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
+	"github.com/hajimehoshi/ebiten/v2/vector"
 
 	raudio "github.com/SVendittelli/pong/resources/audio"
 )
@@ -19,6 +21,10 @@ import (
 const (
 	screenWidth  int = 640
 	screenHeight int = 480
+
+	fontSize      = 24
+	titleFontSize = fontSize * 1.5
+	smallFontSize = fontSize * 0.5
 
 	paddleWidth  int = 10
 	paddleHeight int = 40
@@ -30,6 +36,18 @@ const (
 	ballWidth  int = 10
 	ballHeight int = 10
 )
+
+var (
+	fontFaceSource *text.GoTextFaceSource
+)
+
+func init() {
+	s, err := text.NewGoTextFaceSource(bytes.NewReader(fonts.PressStart2P_ttf))
+	if err != nil {
+		log.Fatal(err)
+	}
+	fontFaceSource = s
+}
 
 type Mode int
 
@@ -205,7 +223,44 @@ func (g *Game) Update() error {
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(color.Black)
 
-	ebitenutil.DebugPrint(screen, "PONG")
+	// Draw a border around the internal game screen
+	borderColor := color.White    // White border
+	borderThickness := float32(2) // Thickness of the border
+
+	// Top border
+	vector.DrawFilledRect(screen, 0, 0, float32(screenWidth), float32(borderThickness), borderColor, false)
+	// Bottom border
+	vector.DrawFilledRect(screen, 0, float32(screenHeight)-borderThickness, float32(screenWidth), float32(borderThickness), borderColor, false)
+	// Left border
+	vector.DrawFilledRect(screen, 0, 0, float32(borderThickness), float32(screenHeight), borderColor, false)
+	// Right border
+	vector.DrawFilledRect(screen, float32(screenWidth)-borderThickness, 0, float32(borderThickness), float32(screenHeight), borderColor, false)
+
+	// Render text
+	var titleText string
+	var message string
+	switch g.mode {
+	case ModeTitle:
+		titleText = "PONG"
+		message = "PRESS SPACE OR ENTER TO START"
+	case ModeGameOver:
+		titleText = "GAME OVER"
+		message = "PRESS SPACE OR ENTER TO RETURN TO TITLE"
+	}
+
+	opt := &text.DrawOptions{}
+	opt.GeoM.Translate(float64(screenWidth/2), 3*titleFontSize)
+	opt.ColorScale.ScaleWithColor(color.White)
+	opt.LineSpacing = titleFontSize
+	opt.PrimaryAlign = text.AlignCenter
+	text.Draw(screen, titleText, &text.GoTextFace{Source: fontFaceSource, Size: titleFontSize}, opt)
+
+	opt = &text.DrawOptions{}
+	opt.GeoM.Translate(float64(screenWidth/2), 5*titleFontSize)
+	opt.ColorScale.ScaleWithColor(color.White)
+	opt.LineSpacing = smallFontSize
+	opt.PrimaryAlign = text.AlignCenter
+	text.Draw(screen, message, &text.GoTextFace{Source: fontFaceSource, Size: smallFontSize}, opt)
 
 	i := ebiten.NewImage(paddleWidth, paddleHeight)
 	i.Fill(color.White)
