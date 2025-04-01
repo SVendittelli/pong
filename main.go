@@ -1,14 +1,19 @@
 package main
 
 import (
+	"bytes"
 	"image/color"
 	"log"
 	"math"
 	"math/rand"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/audio"
+	"github.com/hajimehoshi/ebiten/v2/audio/wav"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
+
+	raudio "github.com/SVendittelli/pong/resources/audio"
 )
 
 const (
@@ -49,6 +54,9 @@ type Game struct {
 	ballVelX     float64
 	ballVelY     float64
 	ballMaxSpeed float64
+
+	audioContext *audio.Context
+	bouncePlayer *audio.Player
 }
 
 func (g *Game) Init() {
@@ -66,6 +74,19 @@ func (g *Game) Init() {
 	g.ballY = screenHeight / 2
 	g.ballVelX = float64(rand.Intn(2)*2-1) * ((g.ballMaxSpeed-1)*rand.Float64() + 1)
 	g.ballVelY = g.ballMaxSpeed * (rand.Float64()*2 - 1)
+
+	if g.audioContext == nil {
+		g.audioContext = audio.NewContext(48000)
+	}
+
+	bounceD, err := wav.DecodeF32(bytes.NewReader(raudio.Bounce_wav))
+	if err != nil {
+		log.Fatal(err)
+	}
+	g.bouncePlayer, err = g.audioContext.NewPlayerF32(bounceD)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func NewGame() ebiten.Game {
@@ -80,6 +101,14 @@ func (g *Game) isUpPressed() bool {
 
 func (g *Game) isDownPressed() bool {
 	return ebiten.IsKeyPressed(ebiten.KeyDown) || ebiten.IsKeyPressed(ebiten.KeyS) || ebiten.IsKeyPressed(ebiten.KeyJ)
+}
+
+func (g *Game) PlayBounce() error {
+	if err := g.bouncePlayer.Rewind(); err != nil {
+		return err
+	}
+	g.bouncePlayer.Play()
+	return nil
 }
 
 func (g *Game) Update() error {
@@ -129,13 +158,25 @@ func (g *Game) Update() error {
 
 	// Check for vertical collision with the walls
 	if g.ballY == ballHeight/2 || g.ballY == screenHeight-ballHeight/2 {
+		err := g.PlayBounce()
+		if err != nil {
+			return err
+		}
 		g.ballVelY *= -1
 	}
 
 	// Check for horizontal collision with the paddles
 	if math.Abs(float64(g.ballX-ballWidth/2-(offsetHorizonal+paddleWidth))) <= 1 && g.ballY+ballHeight/2 >= g.playerY && g.ballY-ballHeight/2 <= g.playerY+paddleHeight {
+		err := g.PlayBounce()
+		if err != nil {
+			return err
+		}
 		g.ballVelX *= -1
 	} else if math.Abs(float64(g.ballX+ballWidth/2-(screenWidth-offsetHorizonal-paddleWidth))) <= 1 && g.ballY+ballHeight/2 >= g.villainY && g.ballY-ballHeight/2 <= g.villainY+paddleHeight {
+		err := g.PlayBounce()
+		if err != nil {
+			return err
+		}
 		g.ballVelX *= -1
 	}
 
