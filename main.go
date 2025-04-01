@@ -95,11 +95,11 @@ func NewGame() ebiten.Game {
 	return g
 }
 
-func (g *Game) isUpPressed() bool {
+func (g *Game) IsUpPressed() bool {
 	return ebiten.IsKeyPressed(ebiten.KeyUp) || ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyK)
 }
 
-func (g *Game) isDownPressed() bool {
+func (g *Game) IsDownPressed() bool {
 	return ebiten.IsKeyPressed(ebiten.KeyDown) || ebiten.IsKeyPressed(ebiten.KeyS) || ebiten.IsKeyPressed(ebiten.KeyJ)
 }
 
@@ -131,9 +131,9 @@ func (g *Game) Update() error {
 		return nil
 	}
 
-	if g.isUpPressed() {
+	if g.IsUpPressed() {
 		g.playerY -= g.paddleSpeed
-	} else if g.isDownPressed() {
+	} else if g.IsDownPressed() {
 		g.playerY += g.paddleSpeed
 	}
 
@@ -225,5 +225,6 @@ func main() {
 	ebiten.SetWindowTitle("Pong")
 	if err := ebiten.RunGame(NewGame()); err != nil {
 		log.Fatal(err)
+		panic(err)
 	}
 }
