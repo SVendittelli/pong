@@ -10,4 +10,7 @@ var (
 
 	//go:embed game_over.wav
 	GameOver_wav []byte
+
+	//go:embed title.wav
+	Title_wav []byte
 )

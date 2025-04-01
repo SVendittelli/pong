@@ -73,9 +73,12 @@ type Game struct {
 	ballVelY     float64
 	ballMaxSpeed float64
 
+	muted bool
+
 	audioContext  *audio.Context
 	bouncePlayer  *audio.Player
 	gameOvePlayer *audio.Player
+	titlePlayer   *audio.Player
 }
 
 func (g *Game) Init() {
@@ -115,6 +118,16 @@ func (g *Game) Init() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	titleD, err := wav.DecodeF32(bytes.NewReader(raudio.Title_wav))
+	if err != nil {
+		log.Fatal(err)
+	}
+	loop := audio.NewInfiniteLoopF32(titleD, titleD.Length())
+	g.titlePlayer, err = g.audioContext.NewPlayerF32(loop)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func NewGame() ebiten.Game {
@@ -140,9 +153,27 @@ func (g *Game) PlayBounce() error {
 }
 
 func (g *Game) Update() error {
+	if inpututil.IsKeyJustPressed(ebiten.KeyM) {
+		g.muted = !g.muted
+	}
+
+	if g.muted {
+		g.bouncePlayer.SetVolume(0)
+		g.gameOvePlayer.SetVolume(0)
+		g.titlePlayer.SetVolume(0)
+	} else {
+		g.bouncePlayer.SetVolume(1)
+		g.gameOvePlayer.SetVolume(1)
+		g.titlePlayer.SetVolume(0.5)
+	}
+
 	if g.mode == ModeTitle {
+		if !g.titlePlayer.IsPlaying() {
+			g.titlePlayer.Play()
+		}
 		if inpututil.IsKeyJustPressed(ebiten.KeyEnter) || inpututil.IsKeyJustPressed(ebiten.KeySpace) {
 			g.mode = ModeGame
+			g.titlePlayer.Pause()
 		}
 		return nil
 	}
