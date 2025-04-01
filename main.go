@@ -64,8 +64,8 @@ type Game struct {
 	playerY     int
 	villainY    int
 
-	villainDir      int
 	villainCoolDown int
+	villainDir      int
 
 	ballX        int
 	ballY        int
@@ -85,8 +85,8 @@ func (g *Game) Init() {
 	g.playerY = (screenHeight - paddleHeight) / 2
 	g.villainY = (screenHeight - paddleHeight) / 2
 
-	g.villainDir = 0
 	g.villainCoolDown = 0
+	g.villainDir = 0
 
 	g.ballMaxSpeed = 4
 	g.ballX = screenWidth / 2
@@ -159,18 +159,25 @@ func (g *Game) Update() error {
 		return nil
 	}
 
+	// Player movement
 	if g.IsUpPressed() {
 		g.playerY -= g.paddleSpeed
 	} else if g.IsDownPressed() {
 		g.playerY += g.paddleSpeed
 	}
 
+	// Villain movement
 	if g.villainCoolDown > 0 {
 		g.villainY += g.paddleSpeed * g.villainDir
 		g.villainCoolDown--
 	} else {
-		g.villainDir = (1 - 2*rand.Intn(2))
-		g.villainCoolDown = rand.Intn(30) + 10 // Random cooldown between 10 and 40 frames
+		if g.villainY+paddleHeight/2 > g.ballY+ballHeight/2 {
+			g.villainDir = -1
+			g.villainCoolDown = rand.Intn(20) + 10
+		} else if g.villainY+paddleHeight/2 < g.ballY+ballHeight/2 {
+			g.villainDir = 1
+			g.villainCoolDown = rand.Intn(20) + 10
+		}
 	}
 
 	// Clamp the vertical location of the paddle within the bounds of the screen
