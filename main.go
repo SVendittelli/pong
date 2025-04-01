@@ -55,8 +55,9 @@ type Game struct {
 	ballVelY     float64
 	ballMaxSpeed float64
 
-	audioContext *audio.Context
-	bouncePlayer *audio.Player
+	audioContext  *audio.Context
+	bouncePlayer  *audio.Player
+	gameOvePlayer *audio.Player
 }
 
 func (g *Game) Init() {
@@ -84,6 +85,15 @@ func (g *Game) Init() {
 		log.Fatal(err)
 	}
 	g.bouncePlayer, err = g.audioContext.NewPlayerF32(bounceD)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	goD, err := wav.DecodeF32(bytes.NewReader(raudio.GameOver_wav))
+	if err != nil {
+		log.Fatal(err)
+	}
+	g.gameOvePlayer, err = g.audioContext.NewPlayerF32(goD)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -182,6 +192,10 @@ func (g *Game) Update() error {
 
 	// Check for game over condition
 	if g.ballX <= ballWidth/2 || g.ballX >= screenWidth-ballWidth/2 {
+		if err := g.gameOvePlayer.Rewind(); err != nil {
+			return err
+		}
+		g.gameOvePlayer.Play()
 		g.mode = ModeGameOver
 	}
 
