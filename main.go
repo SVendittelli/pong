@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"image/color"
 	"log"
 	"math"
@@ -73,6 +74,9 @@ type Game struct {
 	ballVelY     float64
 	ballMaxSpeed float64
 
+	playerScore  int
+	villainScore int
+
 	muted bool
 
 	audioContext  *audio.Context
@@ -94,7 +98,7 @@ func (g *Game) Init() {
 	g.ballMaxSpeed = 4
 	g.ballX = screenWidth / 2
 	g.ballY = screenHeight / 2
-	g.ballVelX = float64(rand.Intn(2)*2-1) * ((g.ballMaxSpeed-1)*rand.Float64() + 1)
+	g.ballVelX = float64(rand.Intn(2)*2-1) * ((g.ballMaxSpeed-2.5)*rand.Float64() + 2.5)
 	g.ballVelY = g.ballMaxSpeed * (rand.Float64()*2 - 1)
 
 	if g.audioContext == nil {
@@ -247,11 +251,19 @@ func (g *Game) Update() error {
 	}
 
 	// Check for game over condition
-	if g.ballX <= ballWidth/2 || g.ballX >= screenWidth-ballWidth/2 {
+	if g.ballX <= ballWidth/2 {
 		if err := g.gameOvePlayer.Rewind(); err != nil {
 			return err
 		}
 		g.gameOvePlayer.Play()
+		g.villainScore += 1
+		g.mode = ModeGameOver
+	} else if g.ballX >= screenWidth-ballWidth/2 {
+		if err := g.gameOvePlayer.Rewind(); err != nil {
+			return err
+		}
+		g.gameOvePlayer.Play()
+		g.playerScore += 1
 		g.mode = ModeGameOver
 	}
 
@@ -285,6 +297,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		titleText = "GAME OVER"
 		message = "PRESS SPACE OR ENTER TO RETURN TO TITLE"
 	}
+	scores := fmt.Sprintf("%d - %d", g.playerScore, g.villainScore)
 
 	opt := &text.DrawOptions{}
 	opt.GeoM.Translate(float64(screenWidth/2), 3*titleFontSize)
@@ -300,6 +313,16 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	opt.PrimaryAlign = text.AlignCenter
 	text.Draw(screen, message, &text.GoTextFace{Source: fontFaceSource, Size: smallFontSize}, opt)
 
+	if g.mode == ModeTitle || g.mode == ModeGameOver {
+		opt = &text.DrawOptions{}
+		opt.GeoM.Translate(float64(screenWidth/2), float64(screenHeight)-3*titleFontSize)
+		opt.ColorScale.ScaleWithColor(color.White)
+		opt.LineSpacing = fontSize
+		opt.PrimaryAlign = text.AlignCenter
+		text.Draw(screen, scores, &text.GoTextFace{Source: fontFaceSource, Size: fontSize}, opt)
+	}
+
+	// Draw paddles
 	i := ebiten.NewImage(paddleWidth, paddleHeight)
 	i.Fill(color.White)
 	op := &ebiten.DrawImageOptions{}
